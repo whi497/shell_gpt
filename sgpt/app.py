@@ -2,7 +2,9 @@ import os
 
 # To allow users to use arrow keys in the REPL.
 import readline  # noqa: F401
+import shutil
 import sys
+from pathlib import Path
 
 import typer
 from click import BadArgumentUsage
@@ -257,6 +259,22 @@ def main(
             )
             continue
         break
+
+
+def register_last_chat(new_chat_id: str) -> None:
+    """
+    Registers the last default chat as an actual chat in the ChatSessions.
+
+    This enables following up on one-off prompts.
+    """
+    last_chat = Path(cfg.get("CACHE_PATH")) / "last_chat"
+    if not last_chat.exists():
+        return
+    new_chat = Path(cfg.get("CHAT_CACHE_PATH")) / new_chat_id
+    if new_chat.exists():
+        # Don't overwrite existing chats
+        return
+    shutil.copy(last_chat, new_chat)
 
 
 def entry_point() -> None:

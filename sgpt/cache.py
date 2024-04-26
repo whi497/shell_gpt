@@ -43,6 +43,14 @@ class Cache:
 
         return wrapper
 
+    def _cache_last_chat(self, kwargs: Dict[str, Any], response: str) -> None:
+        messages = kwargs.get("messages")
+        if not messages:
+            return
+        messages.append({"role": "assistant", "content": response})
+        file = self.cache_path / "last_chat"
+        json.dump(messages, file.open("w"))
+
     @no_type_check
     def _delete_oldest_files(self, max_files: int) -> None:
         """
