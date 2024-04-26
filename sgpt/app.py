@@ -7,8 +7,10 @@ import sys
 from pathlib import Path
 
 import typer
+import shutil
 from click import BadArgumentUsage
 from click.types import Choice
+from pathlib import Path
 
 from sgpt.config import cfg
 from sgpt.function import get_openai_schemas
@@ -106,6 +108,13 @@ def main(
         help="Start a REPL (Read–eval–print loop) session.",
         rich_help_panel="Chat Options",
     ),
+    follow_up: bool = typer.Option(
+        False,
+        "--follow-up",
+        "-fu",
+        help="Follow up on last prompt, " "used with --repl and --chat",
+        rich_help_panel="Chat Options",
+    ),
     show_chat: str = typer.Option(
         None,
         help="Show all messages from provided chat id.",
@@ -193,6 +202,11 @@ def main(
     if chat and repl:
         raise BadArgumentUsage("--chat and --repl options cannot be used together.")
 
+    if follow_up and not (chat or repl):
+        raise BadArgumentUsage(
+            "--follow-up option can only be used with --chat or --repl."
+        )
+
     if editor and stdin_passed:
         raise BadArgumentUsage("--editor option cannot be used with stdin input.")
 
@@ -206,6 +220,9 @@ def main(
     )
 
     function_schemas = (get_openai_schemas() or None) if functions else None
+
+    if follow_up:
+        register_last_chat(chat or repl)
 
     if repl:
         # Will be in infinite loop here until user exits with Ctrl+C.
