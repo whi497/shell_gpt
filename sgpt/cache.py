@@ -1,7 +1,7 @@
 import json
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Callable, Generator, no_type_check
+from typing import Any, Callable, Generator, no_type_check, Dict
 
 
 class Cache:
