@@ -58,6 +58,10 @@ def get_function(name: str) -> Callable[..., Any]:
     raise ValueError(f"Function {name} not found")
 
 
+def get_all_functions() -> List[str]:
+    return [function.name for function in functions]
+
+
 def get_openai_schemas() -> List[Dict[str, Any]]:
     transformed_schemas = []
     for function in functions:

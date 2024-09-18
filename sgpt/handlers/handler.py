@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional
 
 from ..cache import Cache
 from ..config import cfg
-from ..function import get_function
+from ..function import get_function, get_all_functions
 from ..printer import MarkdownPrinter, Printer, TextPrinter
 from ..role import DefaultRoles, SystemRole
 
@@ -86,12 +86,20 @@ class Handler:
         for id, name, arguments in zip(
             name_map.keys(), name_map.values(), arguments_map.values()
         ):
-            dict_args = json.loads(arguments)
-            joined_args = ", ".join(f'{k}="{v}"' for k, v in dict_args.items())
-            yield f"> @FunctionCall `{name}({joined_args})` \n\n"
-
-            result = get_function(name)(**dict_args)
-            if cfg.get("SHOW_FUNCTIONS_OUTPUT") == "true":
+            try:
+                dict_args = json.loads(arguments)
+                joined_args = ", ".join(f'{k}="{v}"' for k, v in dict_args.items())
+                yield f"> @FunctionCall `{name}({joined_args})` \n\n"
+                result = get_function(name)(**dict_args)
+                if cfg.get("SHOW_FUNCTIONS_OUTPUT") == "true":
+                    yield f"```text\n{result}\n```\n"
+            except Exception as e:
+                result = f"Error: {e}"
+                function_names = get_all_functions()
+                if name not in function_names:
+                    result += (
+                        f"\nYou function name should in {function_names}, try again"
+                    )
                 yield f"```text\n{result}\n```\n"
 
             all_function_res_msgs.append(
@@ -138,15 +146,20 @@ class Handler:
                 tool_calls = (
                     delta.get("tool_calls") if use_litellm else delta.tool_calls
                 )
-
                 if tool_calls:
+
+                    # print(delta)
+                    # import pdb
+
+                    # pdb.set_trace()
                     for tool_call in tool_calls:
-                        if tool_call.id is not None:
+                        if tool_call.id is not None and tool_call.id != "":
                             id = tool_call.id
                             name_map[id] = tool_call.function.name
                             arguments_map[id] = ""
                         else:
-                            arguments_map[id] += tool_call.function.arguments
+                            if tool_call.function.arguments is not None:
+                                arguments_map[id] += tool_call.function.arguments
                 if chunk.choices[0].finish_reason == "tool_calls":
                     yield from self.handle_function_call(
                         messages,

@@ -79,6 +79,12 @@ def main(
         help="Generate only code.",
         rich_help_panel="Assistance Options",
     ),
+    force_tool_use: bool = typer.Option(
+        False,
+        "--force-tool-use",
+        "-ft",
+        help="Force tool use.",
+    ),
     functions: bool = typer.Option(
         cfg.get("OPENAI_USE_FUNCTIONS") == "true",
         help="Allow function calls.",
